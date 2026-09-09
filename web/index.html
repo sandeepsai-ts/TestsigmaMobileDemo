@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Testsigma Mobile Web Demo</title>
+<style>
+  :root{
+    --bg:#F4F5F7; --card:#fff; --ink:#1B1D22; --muted:#6B7280;
+    --border:#E3E5E9; --accent:#5B4CFF; --danger:#E23D28;
+    --warn-bg:#FFF3CD; --warn-border:#F0C36D; --warn-ink:#5C4400;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+  .banner{background:var(--warn-bg);border-bottom:1px solid var(--warn-border);color:var(--warn-ink);
+    font-size:12px;font-weight:700;text-align:center;padding:6px;letter-spacing:.02em;}
+  header{background:var(--card);border-bottom:1px solid var(--border);padding:14px 16px;
+    display:flex;align-items:center;justify-content:space-between;}
+  header h1{font-size:17px;margin:0;}
+  nav{display:flex;gap:14px;background:var(--card);border-bottom:1px solid var(--border);padding:0 16px 10px;}
+  nav a{font-size:13px;color:var(--muted);text-decoration:none;font-weight:600;}
+  nav a.active{color:var(--accent);}
+  main{padding:20px 16px;max-width:480px;margin:0 auto;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:4px;}
+  input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:15px;margin-bottom:12px;}
+  input:invalid{border-color:var(--danger);}
+  button{width:100%;padding:12px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;}
+  button.secondary{background:transparent;border:1.5px solid var(--accent);color:var(--accent);margin-top:8px;}
+  #formError{color:var(--danger);font-size:13px;font-weight:600;min-height:18px;margin-bottom:4px;}
+  #networkResult{font-size:12px;font-family:monospace;white-space:pre-wrap;margin-top:10px;background:#fafafa;padding:8px;border-radius:6px;display:none;}
+</style>
+</head>
+<body>
+  <div class="banner">TESTSIGMA MOBILE WEB DEMO &middot; NOT A REAL PRODUCT</div>
+  <header>
+    <h1 id="pageTitle">Sign In</h1>
+  </header>
+  <nav>
+    <a href="#" class="active" data-page="login" id="navLogin">Login</a>
+    <a href="#" data-page="network" id="navNetwork">Network</a>
+    <a href="#" data-page="about" id="navAbout">About</a>
+  </nav>
+  <main>
+    <section id="page-login" class="card">
+      <label for="username">Username</label>
+      <input id="username" type="text" placeholder="demo" autocomplete="off">
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="demo123">
+      <div id="formError"></div>
+      <button id="loginButton">LOG IN</button>
+    </section>
+
+    <section id="page-network" class="card" style="display:none;">
+      <p style="font-size:13px;color:var(--muted);margin-top:0;">Fetches a small JSON payload - useful for
+        testing this Mobile Web target under throttled network conditions.</p>
+      <button id="fetchButton">FETCH DATA</button>
+      <div id="networkResult"></div>
+    </section>
+
+    <section id="page-about" class="card" style="display:none;">
+      <p style="font-size:13px;line-height:1.5;">This is the Mobile Web companion to the Testsigma Mobile
+        Demo App. It mirrors a couple of the same scenarios (validation, network) so the same test
+        suite structure can cover both a native app and a Mobile Web application type in Testsigma.</p>
+    </section>
+  </main>
+
+  <script>
+    const pages = ['login', 'network', 'about'];
+    function showPage(name) {
+      pages.forEach(p => {
+        document.getElementById('page-' + p).style.display = (p === name) ? 'block' : 'none';
+      });
+      document.getElementById('navLogin').classList.toggle('active', name === 'login');
+      document.getElementById('navNetwork').classList.toggle('active', name === 'network');
+      document.getElementById('navAbout').classList.toggle('active', name === 'about');
+      document.getElementById('pageTitle').textContent =
+        name === 'login' ? 'Sign In' : name === 'network' ? 'Network' : 'About';
+    }
+    document.getElementById('navLogin').addEventListener('click', e => { e.preventDefault(); showPage('login'); });
+    document.getElementById('navNetwork').addEventListener('click', e => { e.preventDefault(); showPage('network'); });
+    document.getElementById('navAbout').addEventListener('click', e => { e.preventDefault(); showPage('about'); });
+
+    document.getElementById('loginButton').addEventListener('click', () => {
+      const u = document.getElementById('username').value.trim();
+      const p = document.getElementById('password').value;
+      const errorEl = document.getElementById('formError');
+      if (!u) { errorEl.textContent = 'Username is required.'; return; }
+      if (p.length < 6) { errorEl.textContent = 'Password must be at least 6 characters.'; return; }
+      errorEl.textContent = '';
+      errorEl.style.color = '#1FAA59';
+      errorEl.textContent = 'Signed in as ' + u + ' (simulated).';
+    });
+
+    document.getElementById('fetchButton').addEventListener('click', async () => {
+      const resultEl = document.getElementById('networkResult');
+      resultEl.style.display = 'block';
+      resultEl.textContent = 'Loading\u2026';
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 5000);
+      try {
+        const res = await fetch('https://jsonplaceholder.typicode.com/todos/1', { signal: controller.signal });
+        clearTimeout(timer);
+        const json = await res.json();
+        resultEl.textContent = JSON.stringify(json, null, 2);
+      } catch (err) {
+        clearTimeout(timer);
+        resultEl.textContent = err.name === 'AbortError'
+          ? 'No response within 5s - likely throttled or offline.'
+          : ('Error: ' + err.message);
+      }
+    });
+  </script>
+</body>
+</html>

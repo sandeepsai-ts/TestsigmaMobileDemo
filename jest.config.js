@@ -1,5 +1,6 @@
 module.exports = {
-  preset: 'react-native',
-  setupFilesAfterEnv: ['<rootDir>/__tests__/setup.js'],
-  testEnvironment: 'node',
+  preset: '@react-native/jest-preset',
+  transformIgnorePatterns: [
+    'node_modules/(?!(react-native|@react-native|react-native-webview)/)',
+  ],
 };
